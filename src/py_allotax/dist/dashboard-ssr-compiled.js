@@ -210,17 +210,14 @@ function Contours($$payload, $$props) {
     });
     return out;
   }
-  function get_contours(alpha2, maxlog102) {
-    if (typeof window === "undefined") {
-      return [];
-    }
+  function get_contours(alpha2, maxlog102, rtd2) {
     const Ninset = 10 ** 3;
     const tmpr1 = d3.range(0, 1e3).map((d) => Math.pow(10, d / 999 * 5));
     const tmpr2 = d3.range(0, 1e3).map((d) => Math.pow(10, d / 999 * 5));
     const Ncontours = 10;
     const scale = d3.scaleLinear().domain([0, Ncontours + 1]).range([1, tmpr1.length]);
     const contour_indices = d3.range(Ncontours + 2).map((i) => Math.round(scale(i)));
-    const grid = make_grid(Ninset, tmpr1, tmpr2, alpha2, rtd);
+    const grid = make_grid(Ninset, tmpr1, tmpr2, alpha2, rtd2);
     const indices = contour_indices.slice(1, -1);
     const lastRow = grid[grid.length - 1];
     const heights = indices.map((index) => lastRow[index]);
@@ -230,7 +227,7 @@ function Contours($$payload, $$props) {
     const tmpcontours = contourGenerator(flatDeltamatrix);
     return filter_contours(tmpcontours, Ninset, maxlog102);
   }
-  let mycontours = get_contours(alpha, maxlog10);
+  let mycontours = get_contours(alpha, maxlog10, rtd);
   const x = d3.scaleLinear([0, maxlog10], [0, DiamondInnerHeight]);
   const y = d3.scaleLinear([maxlog10, 0], [DiamondInnerHeight, 0]);
   const pathData = d3.line().x((d, i) => x(d[0])).y((d, i) => y(d[1]));
