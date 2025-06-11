@@ -9,3 +9,6 @@ dist/*
 .vscode
 tests/test.html
 tests/test.pdf
+src/py_allotax/boys-2018.json
+src/py_allotax/boys-1968.json
+src/py_allotax/package-lock.json

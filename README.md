@@ -28,7 +28,7 @@ Table of contents:
 1. Activate your desired python environment then
 ```bash
     pip3 install py-allotax
-    ```
+```
 
 ## Usage instructions
 
@@ -45,6 +45,10 @@ generate_svg(data_path1, data_path2, "test.pdf", "0.17", "Boys 2022", "Boys 2023
 
 If running the example, you can check your result against the [example output](example_charts).
 
+
+<!-- npx vite build  -->
+<!-- node dist/dashboard-ssr-compiled.js test  -->
+<!-- python generate_svg.py boys-1968.json boys-2018.json test.pdf "0.17" "Boys-1968" "Boys-2018" -->
 
 ### CLI
 
