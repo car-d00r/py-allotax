@@ -1,6 +1,18 @@
 # Allotaxonometer through Python
 
-The `py-allotax` implements a python interface to the `allotaxonometer` library. The tool here provides a way for users to input data and arguments and receive back a saved plot! The tool is designed to be used in a command line or in a python notebook in a few lines of code (see usage instructions at the bottom).
+
+<p align="center">
+  <img src="Allotax.png" alt="Allotax icon" width="300px"/>
+</p>
+<p align="center" style="font-size: 10px; color: gray;">
+  <i>Allotax icon created by Julia W. Zimmerman</i>
+</p>
+
+The `py-allotax` implements a python interface to the `allotaxonometer-ui` library. This tool provides a way for users to input data and arguments and receive back a saved plot! The tool is designed to be used in a command line or in a python notebook in a few lines of code (see usage instructions at the bottom).
+
+
+<div style="clear: both;"></div>
+<br>
 
 Table of contents:
 - [Installation](#installation)
@@ -17,65 +29,44 @@ Table of contents:
 1. Requires `python3.11` or greater.
 
 1. If JavaScript tool installs are needed (never used or installed `npm`, `nvm`, `node`):
-    1. Here are the recommended [steps to install `nvm`](https://github.com/nvm-sh/nvm?tab=readme-ov-file#installing-and-updating). `nvm` is a node version manager that streamlines installing the other 2.
+    1. [Install `nvm`](https://github.com/nvm-sh/nvm?tab=readme-ov-file#installing-and-updating). `nvm` is a node version manager that streamlines installing the other 2.
     - Otherwise (not recommended): [steps to individually install `node` and `npm`](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm).
 1. Once you have `nvm`, install the latest of both `node` and `npm` with:
     ```bash
     nvm install --lts
     ```
-1. One package depends on having Chrome (brower) or Chromium (browser driver) installed. **If you have Chrome installed, you can skip this step**. Otherwise, install Chrome or Chromium.
+1. Activate your desired python environment.
 
-1. Activate your desired python environment then
-```bash
+1. Install package:
+    ```bash
     pip3 install py-allotax
     ```
 
+
+> Note:
+> We use `puppeteer.js` under the hood, which is going to download a compatible Chrome during installation.
+
 ## Usage instructions
 
-### Package
-If working in a python notebook or script, you can install the package and use the function directly. Example data can be downloaded from the `example_data` directory to run the example below and those found in the `examples.ipynb`. [boys 2022](example_data/boys_2022.csv) and [boys 2023](example_data/boys_2023.json) are the examples used below.
+If working in a python notebook or script, you can install the package and use the function directly. Example data must be downloaded from the `example_data` directory to run the example below and those found in the `examples.ipynb`. [boys 2022](example_data/boys_2022.csv) and [boys 2023](example_data/boys_2023.json) are the examples used below.
 
 ```python
 import os
 from py_allotax.generate_svg import generate_svg
+
 data_path1 = os.path.join("example_data", "boys_2022.json")
 data_path2 = os.path.join("example_data", "boys_2023.json")
+
 generate_svg(data_path1, data_path2, "test.pdf", "0.17", "Boys 2022", "Boys 2023")
 ```
 
 If running the example, you can check your result against the [example output](example_charts).
 
+To get help, you can run `?py_allotax.generate_svg.generate_svg` in a notebook cell to see argument descriptions.
 
-### CLI
+> [!WARNING]
+> Your own data must be in the `.json` format (see json examples in `example_data/`). If you have a `.csv` file, you can convert it to `.json` using `utils.convert_csv_data` (see `examples.ipynb`).
 
-1. Clone the GitHub repository.
-1. Verify your data is in the required format (`.json`) by seeing json examples in `example_data/`.
-    - See helper functions in `utils` to convert among `csv`, `json`, and `js` formats.
-    - The method `utils.convert_csv_data` exists to convert your data from `.csv` to `.json` if needed--see `examples.ipynb`.
-1. Add your 2 system's files. You need 2 `data.json` files, one for each system.
-
-Verify this test against `example_charts/test.pdf`.
-
-
-To get help, you can run the following `python src/py_allotax/generate_svg.py --help`. It will show the following:
-```
-usage: generate_svg.py [-h] [--desired_format {pdf,html}] json_file_1 json_file_2 output_file alpha title1 title2
-
-Generate allotaxonometer plot.
-
-positional arguments:
-  json_file_1           Path to the first json data file.
-  json_file_2           Path to the second json data file.
-  output_file           Path to save the output pdf file.
-  alpha                 Alpha value.
-  title1                Title of system 1
-  title2                Title of system 2.
-
-options:
-  -h, --help            show this help message and exit
-  --desired_format {pdf,html}
-                        Desired output format (default: pdf).
-```
 
 ## Developer Notes
 ### Dependency Manager
@@ -90,11 +81,20 @@ to install all python dependencies.
 
 ### Testing
 
-To test the package without building and installing, simply run:
+To test the package without building and installing it, `cd` to py-allotax, install the node modules, then run:
 ```
-pdm run pytest
+pdm add -e . -dG dev
+pdm run test # benchmarks excluded
 ```
-This will execute the tests written in the `tests` dir.
+These commands will add the package in editable mode as a development dependency then execute the tests written in the `tests` dir.
+
+### Benchmarking
+
+To benchmark the package:
+```
+pdm run benchmark
+```
+These commands will add the package in editable mode as a development dependency then execute the tests written in the `tests` dir.
 
 ### Package Build
 Clone this repo and install the requirements:
@@ -109,11 +109,65 @@ You should see a `.whl` file in the newly created `dist` directory.
 
 ## Frequent questions or issues
 
+How much data can I run in this tool?
+- The py-allotax supports approximately 2 GB of data. We recommend checking the size of your data files.
+
 Will any data format work?
 - There are specific column/variable names, and the data must be in `.json` format. The column names and formats vary across a few of the allotaxonometer tools, so there is a data format conversion function in `utils.py` to go from `.csv` to `.json`. See `examples.ipynb` for how to convert your data from `.csv` to `.json`.
 
+Terminal says there is no `nvm` after installing it.
+- Restart your terminal to activate it.
+
+Terminal says there is no `node` even after I have already run `py-allotax` methods.
+- This seems to happen when switching environments or changing branches. You can simply re-run the installs. You should already have `nvm` and be able to start from there.
+
+I work in a high performance computing (HPC) environment (e.g., UVM's VACC) and the PDF won't render.
+- In a HPC env, we discovered that a conda environment won't be able to discover your chromium location---a requirement to render the graph in a PDF. We recommend these solutions: 1) working locally instead, 2) in the HPC environment, run `get_rtd` only to get results and work with the data, 3) use the graph option to get the HTML only because you can open these in your own browser and screenshot or print if few are needed, or 4) the advanced workaround instructions below (we do not recommend as a first resort because the user will need to discover multiple paths).
+
+    <details>
+    <summary>Click for advanced workaround instructions to render PDFs in an HPC environment. Please note the default paths here are examples and will not be correct for your exact env; user will need to discover their exact paths for their env, python version, and chromium version. Get in touch if this is your only option.</summary>
+
+    - **After following the normal installation steps, use the steps below, but amend the path for your username, conda environment containing the py_allotax library, python version, and chromium distribution.**
+    1. Install this additional package in your env. This should let you do the convert data and RTD functions only **(you can stop here if PDF is unneeded)**.
+        ```
+        conda install -c conda-forge nodejs
+        ```
+    1. Get your py_allotax env location (paste it somewhere retrievable):
+        ```
+        conda info --envs | grep pyallotax
+        ```
+    1. Find your python version:
+        ```
+        python --version
+        ```
+    1. Change directories to your py_allotax env location:
+        ```
+        cd $HOME/miniconda3/envs/pyallotax/lib/python3.13/site-packages/py_allotax/
+        ```
+    1. Start by making a folder in this location:
+        ```
+        mkdir chrome
+        ```
+    1. Get the chromium executable location and copy its output (paste this path somewhere retrievable):
+        ```
+        node -e "console.log(require('puppeteer').executablePath())"
+        ```
+    1. Next steps need to be done carefully with your paths. This will copy the chromium files from its location into your py_allotax env location. The first path is the chromium location, and the second path is your py_allotax library location in your env:
+        1. ```scp -r $HOME/.cache/puppeteer/chrome $HOME/miniconda3/envs/pyallotax/lib/python3.13/site-packages/py_allotax/chrome```
+        1. ```scp -r $HOME/.cache/puppeteer/chrome-headless-shell $HOME/miniconda3/envs/pyallotax/lib/python3.13/site-packages/py_allotax/chrome```
+        1. ```chmod +x $HOME/miniconda3/envs/pyallotax/lib/python3.13/site-packages/py_allotax/chrome/chrome/linux-138.0.7204.49/chrome-linux64/chrome```
+        1. ```chmod +x $HOME/miniconda3/envs/pyallotax/lib/python3.13/site-packages/py_allotax/chrome/chrome-headless-shell/linux-138.0.7204.49/chrome-headless-shell-linux64/chrome-headless-shell```
+
+    1. In your own script or python notebook, set this variable (replace with the location your copied the chromium location to within your py_allotax env)
+        ```
+        os.environ["PUPPETEER_EXECUTABLE_PATH"] = "~/miniconda3/envs/pyallotax/lib/python3.13/site-packages/py_allotax/chrome/chrome/linux-138.0.7204.49/chrome-linux64/chrome”
+        ```
+
+    </details>
+
+
 I use Google colab or online-based coding environments only.
-- Currently, this tool is a repo (not yet a package) and its dependencies may be difficult to install in an online environment. We recommend using Python virtual environments or Anaconda to create and manage Python environments locally. See below some shell instructions to get started with a Python virtual environment.
+- Currently, this tool's dependencies may be difficult to install in an online environment. We recommend using Python virtual environments or Anaconda to create and manage Python environments locally. See below some shell instructions to get started with a Python virtual environment.
 
     <details>
     <summary>Click for Python virtual environment instructions</summary>
@@ -131,32 +185,13 @@ I use Google colab or online-based coding environments only.
             ```
             source /replace-wth-path-to/name_of_env/bin/activate
             ```
-        - Now you can install the python packages needed or do other library management (type `pip help` for more commands):
-            ```
-            pip3 install pandas pyhtml2pdf selenium==4.25.0
-            ```
+        - Now you can install the python packages needed or do other library management (type `pip help` for more commands).
     - You are set up to use a coding application (IDE) or command line to run this tool. If you do not have Anaconda, we recommend VS Code (where you can work with `.ipynb` files as you might in Jupyter or Colab).
     </details>
 
 
 Where do I find the output?
 - It is at the path you specified (argument provided) when you ran the `generate_svg`.
-
-Terminal says there is no `nvm` after installing it.
-- Restart your terminal to activate it.
-
-Terminal says there is no `node` even after I have already run `py-allotax` methods.
-- This seems to happen when switching environments or changing branches. You can simply re-run the installs. You should already have `nvm` and be able to start from there.
-
-I am receiving this error: `AttributeError: 'ChromiumRemoteConnection' object has no attribute '_url’`.
-- One of secondary dependencies is `selenium`, and it seems to break if the version is higher than 4.25.0. Run `pip3 install selenium==4.25.0`.
-
-I am receiving an `npm` error regarding `canvas`, `pixman`, or other packages I do not recognize.
-- You may need `canvas` and its dependencies. Please follow [this guide](https://www.npmjs.com/package/canvas#compiling) to installing it based on your OS.
-
-Other packages are erring out or not installing.
-- We will eventually package this repo and streamline installation.
-
 
 <br>
 <br>
@@ -170,12 +205,12 @@ Users accessing these tools is our primary goal, so feel free to contact us by s
 ## Repo structure notes
 - Inside `src`:
     - `generate_svg.py` is the main script to generate the pdf. You can run this from command line or in a notebook.
-- Outside `src`: you can download example data and charts and a notebook to run pre-constructed examples that use the library.
-- Once you set up your ecosystem, you will see `node_modules/`, which will contain the `npm` packages.
+- Outside `src`: you can download `example_data` and `example_charts` and a notebook to run pre-constructed examples that use the library.
 
 
 ## Resources
 
-- [Allotaxonometer main package](https://github.com/jstonge/allotaxonometer)
-- [Allotaxonometer web app](https://allotax.vercel.app/)
-- The work and paper leading to these tools is [here](https://doi.org/10.1140/epjds/s13688-023-00400-x).
+- [Allotaxonometer-ui main package](https://github.com/Vermont-Complex-Systems/allotaxonometer-ui).
+- [Allotaxonometer web app](https://vermont-complex-systems.github.io/complex-stories/allotaxonometry) which replaces the [old webpage](https://allotax.vercel.app/).
+- The work and paper leading to these tools is [here](https://doi.org/10.1140/epjds/s13688-023-00400-x) with another paper describing the [allotaxonometer ecosystem of tools](https://arxiv.org/abs/2506.21808).
+
