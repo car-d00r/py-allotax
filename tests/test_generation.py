@@ -4,7 +4,7 @@ import os
 
 import pytest
 
-from py_allotax import allotaxonograph, compute_allotax, render_allotaxonograph
+from py_allotax import allotaxonograph
 
 DATA_1 = os.path.join("example_data", "boys_1895.json")
 DATA_2 = os.path.join("example_data", "boys_1968.json")
@@ -40,7 +40,21 @@ def test_generation_explicit_format(tmp_path):
 
 def test_inline_figure(tmp_path):
     obj = allotaxonograph(DATA_1, DATA_2, "0.17", "1895", "1968")
+
+    # default inline display: static SVG (works in every frontend)
+    assert not hasattr(obj, "_repr_html_")
     assert obj._repr_svg_().lstrip().startswith("<svg")
+
+    # opt-in interactive view: iframe mounting the Dashboard from esm.sh
+    view = obj.interactive()
+    html_repr = view._repr_html_()
+    assert html_repr.startswith("<iframe")
+    assert "esm.sh/allotaxonometer-ui@" in html_repr
+    assert "mount(Dashboard" in html_repr
+
+    html_out = tmp_path / "interactive.html"
+    view.save_html(str(html_out))
+    assert "mount(Dashboard" in html_out.read_text()
 
     out = tmp_path / "inline.svg"
     obj.save(str(out))
@@ -48,13 +62,13 @@ def test_inline_figure(tmp_path):
 
 
 def test_compute_once_render_many(tmp_path):
-    plot_data = compute_allotax(DATA_1, DATA_2, "0.17", "1895", "1968")
-    assert plot_data["ncells"] > 0
-    assert len(plot_data["wordshift"]) > 0
+    fig = allotaxonograph(DATA_1, DATA_2, "0.17", "1895", "1968")
+    assert fig.plot_data["ncells"] > 0
+    assert len(fig.plot_data["wordshift"]) > 0
 
     for fmt in ("svg", "html"):
         out = tmp_path / f"reuse.{fmt}"
-        render_allotaxonograph(plot_data, str(out), fmt)
+        fig.save(str(out))
         assert out.exists() and out.stat().st_size > 0
 
 

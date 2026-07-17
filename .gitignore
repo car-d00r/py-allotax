@@ -21,3 +21,4 @@ example_charts/boys_*
 example_charts/reuse_test.*
 example_charts/svg_only_test.svg
 uv.lock
+example_charts/*interactive*

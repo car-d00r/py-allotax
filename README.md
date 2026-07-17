@@ -10,7 +10,7 @@
 
 The `py-allotax` implements a python interface to the `allotaxonometer-ui` library. This tool provides a way for users to input data and arguments and receive back a saved plot! The tool is designed to be used in a command line or in a python notebook in a few lines of code (see usage instructions at the bottom).
 
-All computation (rank-turbulence divergence, diamond counts, wordshift, balance) runs in-process through [allotax](https://pypi.org/project/allotax/), the Rust core shared with the allotaxonometer web app. JavaScript (`node` + `puppeteer`) is only needed to render the plot (`pdf`, `svg`, or `html`); RTD-only usage (`get_rtd`) requires no JavaScript at all.
+All computation (rank-turbulence divergence, diamond counts, wordshift, balance) runs in-process through [allotax](https://pypi.org/project/allotax/), the Rust core shared with the allotaxonometer web app. JavaScript (`node` + `puppeteer`) is only needed to render the plot (`pdf`, `svg`, or `html`); RTD-only usage (calling `allotax.rank_turbulence_divergence` directly, see below) requires no JavaScript at all.
 
 
 <div style="clear: both;"></div>
@@ -48,7 +48,7 @@ From a local (your computer) coding environment:
 
 
 > Note:
-> We use `puppeteer.js` under the hood. On your first plot render, the package runs `npm install` once (which also downloads a compatible Chrome) — this can take a few minutes. RTD-only usage (`get_rtd`) never needs this step.
+> We use `puppeteer.js` under the hood. On your first plot render, the package runs `npm install` once (which also downloads a compatible Chrome) — this can take a few minutes. RTD-only usage (calling `allotax` directly) never needs this step.
 
 ## Usage instructions
 
@@ -65,36 +65,47 @@ allotaxonograph(
 )
 ```
 
-The output format follows the file extension: `.pdf` (also saves the intermediate HTML alongside), `.svg` (standalone vector file, same as the web app's "Download SVG"), or `.html` (pass `desired_format` to override). In a Jupyter notebook, omit `output_file` and the chart renders inline in the cell output:
+The output format follows the file extension: `.pdf` (also saves the intermediate HTML alongside), `.svg` (standalone vector file, same as the web app's "Download SVG"), or `.html` (pass `desired_format` to override). In a Jupyter notebook, omit `output_file` and the chart renders inline in the cell output as a static SVG (works in every frontend, including VS Code):
 
 ```python
-allotaxonograph(df1, df2, "0.17", "System 1", "System 2")  # displays in the notebook
+fig = allotaxonograph(df1, df2, "0.17", "System 1", "System 2")  # displays inline
+fig.save("chart.pdf")           # optionally also write any format
+fig.interactive()               # interactive Dashboard (hover tooltips), loaded from esm.sh
+fig.interactive().save_html("chart_interactive.html")  # or save it and open in a browser
 ```
+
+The interactive view needs internet at viewing time and a frontend that runs scripts in outputs (JupyterLab, classic notebook). Sandboxed renderers such as VS Code's may block the CDN script — there, use `save_html` and open the file in a browser.
 
 Each system's data can be a path to a `.json` file (a list of records with `types` and `counts` keys), a pandas DataFrame with `types` and `counts` columns, a list of records, or a columnar dict — so `.csv` data is just `pd.read_csv("data.csv")` passed directly:
 
 ```python
 import pandas as pd
-from py_allotax import allotaxonograph, get_rtd
+from py_allotax import allotaxonograph
 
 df1, df2 = pd.read_csv("sys1.csv"), pd.read_csv("sys2.csv")
 allotaxonograph(df1, df2, "0.17", "System 1", "System 2", output_file="test.svg")
-
-result = get_rtd(df1, df2, "0.17")  # RTD + words driving divergence, no JS needed
-result["rtd"], result["words_df"]
 ```
 
-To render the same comparison to several formats, compute once and render many — computation and charting are separate steps under the hood:
+To render the same comparison to several formats, keep the figure and call `.save()` repeatedly — computation happens only once:
 
 ```python
-from py_allotax import compute_allotax, render_allotaxonograph
-
-plot_data = compute_allotax(df1, df2, "0.17", "System 1", "System 2")  # no JS
-render_allotaxonograph(plot_data, "test.pdf", "pdf")
-render_allotaxonograph(plot_data, "test.svg", "svg")
+fig = allotaxonograph(df1, df2, "0.17", "System 1", "System 2")
+fig.save("test.pdf")
+fig.save("test.svg")
+fig.plot_data  # the raw pieces (diamond_counts, wordshift, balance, ...) for custom plotting
 ```
 
-`compute_allotax` is also handy on its own: it returns the diamond counts, wordshift, and balance data for custom plotting.
+For RTD data without a plot (no `node`/chromium needed — ideal for HPC), call the [allotax](https://pypi.org/project/allotax/) bindings directly — they accept anything with `types` and `counts` columns/keys, so DataFrames work as-is:
+
+```python
+import allotax
+
+result = allotax.rank_turbulence_divergence(df1, df2, 0.17)
+result["normalization"], result["delta_sum"]
+words_df = pd.DataFrame(result["wordshift"])  # type, rank1, rank2, divergence (signed)
+```
+
+(Only for a `.json` file path or a list of records do you need to wrap the input: `as_system("data.json")`.) `allotax` also provides `rank_turbulence_divergence_multi_alpha` for sweeping many alphas in parallel — see [its docs](https://pypi.org/project/allotax/).
 
 There is also a command line interface (installed with the package):
 
@@ -174,7 +185,7 @@ Terminal says there is no `node` even after I have already run `py-allotax` meth
 - This seems to happen when switching environments or changing branches. You can simply re-run the installs. You should already have `nvm` and be able to start from there.
 
 I work in a high performance computing (HPC) environment (e.g., UVM's VACC) and the PDF won't render.
-- In a HPC env, we discovered that a conda environment won't be able to discover your chromium location---a requirement to render the graph in a PDF or SVG. We recommend these solutions: 1) working locally instead, 2) in the HPC environment, use `get_rtd`, which runs entirely in Python (no `node`, `npm`, or chromium needed) and lets you work with the data directly, 3) use the graph option to get the HTML only because you can open these in your own browser and screenshot or print if few are needed, or 4) the advanced workaround instructions below (we do not recommend as a first resort because the user will need to discover multiple paths).
+- In a HPC env, we discovered that a conda environment won't be able to discover your chromium location---a requirement to render the graph in a PDF or SVG. We recommend these solutions: 1) working locally instead, 2) in the HPC environment, call `allotax.rank_turbulence_divergence` directly (see usage instructions), which runs entirely in Python (no `node`, `npm`, or chromium needed) and lets you work with the data directly, 3) use the graph option to get the HTML only because you can open these in your own browser and screenshot or print if few are needed, or 4) the advanced workaround instructions below (we do not recommend as a first resort because the user will need to discover multiple paths).
 
     <details>
     <summary>Click for advanced workaround instructions to render PDFs in an HPC environment. Please note the default paths here are examples and will not be correct for your exact env; user will need to discover their exact paths for their env, python version, and chromium version. Get in touch if this is your only option.</summary>

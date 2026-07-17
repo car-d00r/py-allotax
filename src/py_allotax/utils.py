@@ -3,7 +3,6 @@
 import json
 import os
 
-import allotax
 import pandas as pd
 
 
@@ -66,41 +65,7 @@ def as_system(data) -> dict:
     )
 
 
-def get_rtd(data1, data2, alpha, top_n: int = 30):
-    """Get RTD + words driving divergence as DataFrame.
-
-    Computed in-process via the `allotax` Rust bindings; no node/JS required.
-
-    Args:
-        data1: First system — path to a JSON data file, a pandas DataFrame
-            with 'types' and 'counts' columns, a list of records, or a
-            columnar dict (see `as_system`).
-        data2: Second system, same accepted forms.
-        alpha: Alpha value ("0.17", "Infinity", or a float).
-        top_n: Number of top words to return. Use 0 or -1 for all words.
-
-    Returns:
-        Dict with 'rtd' ({'normalization', 'delta_sum'}), 'words_df'
-        (DataFrame with type, rank1, rank2, rank_diff, metric), and
-        'total_words'.
-    """
-    result = allotax.rank_turbulence_divergence(
-        as_system(data1), as_system(data2), parse_alpha(alpha), limit=0
-    )
-
-    words_df = pd.DataFrame(result["wordshift"]).rename(columns={"divergence": "metric"})
-    words_df["rank_diff"] = words_df["rank1"] - words_df["rank2"]
-    words_df = words_df[["type", "rank1", "rank2", "rank_diff", "metric"]]
-
-    total_words = len(words_df)
-    if top_n and top_n > 0:
-        words_df = words_df.head(top_n).reset_index(drop=True)
-
-    return {
-        "rtd": {
-            "normalization": result["normalization"],
-            "delta_sum": result["delta_sum"],
-        },
-        "words_df": words_df,
-        "total_words": total_words,
-    }
+# For RTD data without a plot, call the Rust bindings directly:
+#   import allotax
+#   allotax.rank_turbulence_divergence(as_system(data1), as_system(data2), 0.17)
+# See the README and examples.ipynb.
